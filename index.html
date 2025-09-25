@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FotoJB - Pose What U Like!</title>
+    <meta name="description" content="A magical cosmic-themed photobooth web app with filters, countdown capture, and stellar photo strips. Take amazing photos with space-inspired effects!" />
+    <meta name="author" content="FotoJB" />
+
+    <meta property="og:title" content="FotoJB - Pose What U Like!" />
+    <meta property="og:description" content="A magical cosmic-themed photobooth web app with filters, countdown capture, and stellar photo strips. Take amazing photos with space-inspired effects!" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <style>
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background: #6096BA;
+        transition: background 0.5s cubic-bezier(0.4,0,0.2,1);
+        overflow-x: hidden;
+      }
+      .bg-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: -1;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        transition: background 0.5s cubic-bezier(0.4,0,0.2,1);
+        background: radial-gradient(circle at 50% 50%, #6096BA 0%, #274472 100%);
+      }
+      .photobooth-banner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem auto;
+        font-family: 'Luckiest Guy', 'Comic Sans MS', cursive, sans-serif;
+        font-size: 2.8rem;
+        font-weight: bold;
+        letter-spacing: 0.04em;
+        color: #fff;
+        background: linear-gradient(90deg, #6096BA 0%, #274472 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        position: relative;
+        text-align: center;
+        filter: drop-shadow(0 0 8px #6096BA) drop-shadow(0 0 16px #6096BA);
+        animation: photobooth-glow 2.5s infinite alternate;
+        transition: transform 0.3s cubic-bezier(.68,-0.55,.27,1.55), filter 0.3s;
+        z-index: 2;
+      }
+      @keyframes photobooth-glow {
+        0% { filter: drop-shadow(0 0 8px #6096BA) drop-shadow(0 0 16px #6096BA); }
+        100% { filter: drop-shadow(0 0 24px #6096BA) drop-shadow(0 0 48px #274472); }
+      }
+      .photobooth-banner:hover {
+        animation: photobooth-bounce 0.7s;
+        transform: scale(1.05) rotate(-2deg);
+        filter: drop-shadow(0 0 32px #fff) drop-shadow(0 0 64px #6096BA);
+      }
+      @keyframes photobooth-bounce {
+        0%   { transform: scale(1)   rotate(0deg); }
+        30%  { transform: scale(1.12) rotate(-3deg); }
+        50%  { transform: scale(0.98) rotate(2deg); }
+        70%  { transform: scale(1.06) rotate(-2deg); }
+        100% { transform: scale(1.05) rotate(-2deg); }
+      }
+      .photobooth-banner .shimmer {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none;
+        background: linear-gradient(120deg, transparent 0%, #fff 50%, transparent 100%);
+        opacity: 0.18;
+        filter: blur(2px);
+        animation: shimmer-move 2.5s linear infinite;
+        z-index: 1;
+      }
+      @keyframes shimmer-move {
+        0% { transform: translateX(-100%) skewX(-20deg); }
+        100% { transform: translateX(100%) skewX(-20deg); }
+      }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+
+    <!-- Remove favicon for clean export -->
+    <link rel="icon" href="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" type="image/gif">
+    <style>
+      /* Fallback: Hide any unknown top-left overlays */
+      body > .top-left-badge,
+      .floating-heart,
+      #heart-badge {
+        display: none !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="bg-overlay" id="bgOverlay"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+    (function() {
+      const base = [96, 150, 186]; // #6096BA
+      const overlay = document.getElementById('bgOverlay');
+      function lerp(a, b, t) { return a + (b - a) * t; }
+      function toRgb(arr) { return `rgb(${arr.map(Math.round).join(',')})`; }
+      function setOverlay(x, y, scroll, click) {
+        // x, y: 0-1, scroll: 0-1, click: 0-1
+        const t1 = x * 0.5 + y * 0.5;
+        const t2 = scroll * 0.7 + click * 0.3;
+        // Lerp between Danube and a deeper blue
+        const color1 = [
+          lerp(base[0], 39, t1),
+          lerp(base[1], 68, t1),
+          lerp(base[2], 114, t1)
+        ];
+        const color2 = [
+          lerp(base[0], 255, t2),
+          lerp(base[1], 255, t2),
+          lerp(base[2], 255, t2)
+        ];
+        overlay.style.background = `radial-gradient(circle at ${x*100}% ${y*100}%, ${toRgb(color1)} 0%, ${toRgb(color2)} 100%)`;
+      }
+      let clickT = 0;
+      let clickTimeout;
+      function handle(e) {
+        const x = (e.touches ? e.touches[0].clientX : e.clientX || window.innerWidth/2) / window.innerWidth;
+        const y = (e.touches ? e.touches[0].clientY : e.clientY || window.innerHeight/2) / window.innerHeight;
+        const scroll = window.scrollY / (document.body.scrollHeight - window.innerHeight || 1);
+        setOverlay(x, y, scroll, clickT);
+      }
+      window.addEventListener('mousemove', handle);
+      window.addEventListener('touchmove', handle);
+      window.addEventListener('scroll', handle);
+      window.addEventListener('click', function(e) {
+        clickT = 1;
+        handle(e);
+        clearTimeout(clickTimeout);
+        clickTimeout = setTimeout(() => { clickT = 0; handle(e); }, 400);
+      });
+      // Initial
+      setOverlay(0.5, 0.5, 0, 0);
+    })();
+    // Optionally, add a gentle rotation on hover for extra fun
+    const banner = document.querySelector('.photobooth-banner');
+    banner.addEventListener('mouseenter', () => {
+      banner.style.transform = 'scale(1.05) rotate(-2deg)';
+    });
+    banner.addEventListener('mouseleave', () => {
+      banner.style.transform = '';
+    });
+    </script>
+  </body>
+</html>
